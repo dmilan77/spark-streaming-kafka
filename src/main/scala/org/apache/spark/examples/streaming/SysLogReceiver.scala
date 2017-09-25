@@ -1,8 +1,9 @@
 package org.apache.spark.examples.streaming
 
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.apache.spark.sql.{SQLContext, SaveMode}
 
 /**
   * Counts words in UTF8 encoded, '\n' delimited text received from the network every second.
@@ -16,6 +17,7 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
   *    `$ bin/run-example org.apache.spark.examples.streaming.SysLogReceiver localhost 9999`
   */
 object SysLogReceiver {
+
   def main(args: Array[String]) {
     if (args.length < 2) {
       System.err.println("Usage: NetworkWordCount <hostname> <port>")
@@ -23,13 +25,56 @@ object SysLogReceiver {
     }
 
     val sparkConf = new SparkConf().setAppName("NetworkWordCount")
-    val ssc = new StreamingContext(sparkConf, Seconds(1))
+    val sc = new SparkContext(sparkConf)
+    val ssc = new StreamingContext(sc, Seconds(1))
+
+    val sqlContext = new SQLContext(sc)
     val lines = ssc.socketTextStream(args(0), args(1).toInt, StorageLevel.MEMORY_AND_DISK_SER)
-    val arr = lines.toString.split("\n").filter(_ != "")
+   // lines.foreachRDD(println(_))
+
+//
+//    lines.foreachRDD(
+//
+//      rdd=>
+//        rdd.map((record:String)=>{
+//        val sysLogRecord:SysLogRecord = SysLogParser.parseFromLogLine(record)
+//        println("****************************")
+//        println(sysLogRecord.messageString)
+//        println(sysLogRecord.dateTime)
+//        println(sysLogRecord.client)
+//        println(sysLogRecord.messageID)
+//        println("****************************")
+//
+//        sysLogRecord
+//      }
+//      )
+//    )
+
+//    lines.foreachRDD(rdd=>
+//      rdd.map( (record:String) => (SysLogParser.parseFromLogLine(record)) )
+//
+//    )
+
+
+    lines.foreachRDD(rdd=>{
+
+    val sysLogRDD =   rdd.map( (record:String) => {
+      println("*************************** RDD  ********  "+record)
+      SysLogParser.parseFromLogLine(record)
+
+    } )
+     val sysLogDF =  sqlContext.createDataFrame(sysLogRDD)
+      sysLogDF.write.mode(SaveMode.Overwrite).parquet("/user/hive/syslog/v1/syslogrecord")
+    }
+
+    )
+
+
+    // val arr = lines.toString.split("\n").filter(_ != "")
 
     //val words = lines.flatMap(_.split(" "))
     //val wordCounts = words.map(x => (x, 1)).reduceByKey(_ + _)
-    lines.print()
+    //lines.print()
     //wordCounts.print()
     ssc.start()
     ssc.awaitTermination()
