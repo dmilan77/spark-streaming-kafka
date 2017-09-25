@@ -1,0 +1,11 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "hashicorp/precise64"
+  config.vm.provision "shell", path: "vagrant_provision.sh"
+  config.vm.network "private_network", ip: "172.28.128.11"
+  config.vm.synced_folder "/opt/MySoftware", "/opt/MySoftware"
+  config.vm.hostname="interset1"
+  config.vm.provider "virtualbox" do |vb|
+    vb.name="interset1"
+	vb.memory="8092"
+  end
+end
