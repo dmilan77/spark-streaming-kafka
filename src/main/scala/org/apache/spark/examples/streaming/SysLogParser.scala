@@ -19,12 +19,14 @@ case class SysLogRecord(dateTime:String , client:String , messageID:String , mes
   class SysLogParser extends Serializable {
     // Sep 24 21:06:01 interset1 rsyslogd-3000: unknown priority name "" [try http://www.rsyslog.com/e/3000 ]
 
-    private val dateTime = "(^[\\w]{3} \\d{2} \\d{2}:\\d{2}:\\d{2})"              // like `Sep 24 21:06:01`
+    private val dateTime = "(\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2})"              // like `Sep 24 21:06:01`
     private val client = "(\\S+)"                     // '\S' is 'non-whitespace character'
     private val messageId = "(\\S+)"
     private val messageString = "(.*)"                 // any number of any character, reluctant
 
-    private val regex = s"$dateTime $client $messageId  $messageString"
+    private val regex = s"$dateTime $client $messageId $messageString"
+
+    println(regex)
     private val p = Pattern.compile(regex)
 
     def parseRecord(record: String): SysLogRecord = {
