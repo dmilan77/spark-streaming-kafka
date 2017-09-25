@@ -28,11 +28,12 @@ case class SysLogRecord(dateTime:String , client:String , messageID:String , mes
     private val p = Pattern.compile(regex)
 
     def parseRecord(record: String): SysLogRecord = {
-      val matcher = p.matcher(record)
+      val newRecord = if(record!=null) record.trim else record
+      val matcher = p.matcher(newRecord)
       if (matcher.find) {
         buildSysLogParser(matcher)
       } else {
-        SysLogRecord("", "", "", "")
+        SysLogRecord("BAD", "BAD", "BAD", "BAD")
       }
     }
 
